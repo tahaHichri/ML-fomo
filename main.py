@@ -7,6 +7,8 @@ import numpy as np
 from tabulate import tabulate
 from textblob import TextBlob
 
+from langdetect import detect
+
 from tweepy import OAuthHandler 
 from collections import Counter
 from nltk.corpus import stopwords 
@@ -30,6 +32,8 @@ class TwitterAnalyzer(object):
 	words = []
 	search_words = []
 
+	stop_words = []
+
 	def __init__(self):
 		
 		print(f'\nDownloading/fetching stopwords ..')
@@ -50,23 +54,26 @@ class TwitterAnalyzer(object):
 			print("Error: Authentication Failed") 
 
 		
-
-
-
 	
 
 	def sanitize_text(self, text):
 		
+		if detect(text) == 'en':
+			allow_in_dict = True
+		else:
+			allow_in_dict = False
+
 		# remove non-words
 		sanitized_text = ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t]) |(\w+:\/\/\S+)", " ", text).split()) 
+
 
 		# self.detected_langs.add(TextBlob(sanitized_text).detect_language())
 
 		# TODO stop words language can be set based on the detected language of the tweet.
-		stop_words = set(stopwords.words('english'))
+		self.stop_words = set(stopwords.words('english'))
 
-		stop_words.update(STOPWORDS)
-		stop_words.update(self.ignored_words)
+		self.stop_words.update(STOPWORDS)
+		self.stop_words.update(self.ignored_words)
 		
 		word_tokens = word_tokenize(sanitized_text) 
   
@@ -75,7 +82,7 @@ class TwitterAnalyzer(object):
 		filtered_sentence = [] 
 		# not ignored and > 1 (punctation and stuff)
 		for w in word_tokens: 
-		    if w not in stop_words and len(w) > 1 : 
+		    if w not in self.stop_words and len(w) > 3 and allow_in_dict : 
 		        filtered_sentence.append(w) 
 		#print (filtered_sentence)
 
@@ -95,10 +102,8 @@ class TwitterAnalyzer(object):
 	def get_sentiment(self, text):
 		# Keep idomatic text
 		text = self.sanitize_text(text)
-		analysis = TextBlob(text) 
-		
-		# add to the langs used if not already existing
-		#self.detected_langs.add(analysis.detect_language())
+
+		analysis = TextBlob(text)
 
 		# set sentiment 
 		if analysis.sentiment.polarity > 0: 
@@ -153,7 +158,7 @@ def main():
 	print(f'\nMost frequently used words')
 	print(terms_occurence.most_common(10))
 
-	print(terms_occurence)
+	#print(terms_occurence)
 
 	# print(f'\nMost langs')
 	# print(api.detected_langs)
@@ -184,7 +189,7 @@ def main():
 	# plt.axis("off")
 
 	# lower max_font_size
-	wordcloud = WordCloud(stopwords=api.ignored_words, max_font_size=40).generate(dictionary_str)
+	wordcloud = WordCloud(stopwords=api.stop_words, max_font_size=40).generate(dictionary_str)
 	plt.figure()
 	plt.imshow(wordcloud, interpolation="bilinear")
 	plt.axis("off")
