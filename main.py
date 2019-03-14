@@ -1,46 +1,100 @@
+# I have deliberatly chosen this order :p
 import re 
 import sys
+import nltk
 import tweepy 
 import numpy as np
-from textblob import TextBlob 
+from tabulate import tabulate
+from textblob import TextBlob
 from tweepy import OAuthHandler 
 from collections import Counter
+from nltk.corpus import stopwords 
+from nltk.tokenize import word_tokenize 
+from textblob.decorators import requires_nltk_corpus
 
 class TwitterAnalyzer(object): 
+	_classifier = None
+
+	
+	# The ignored words are twitter hashtags, links, smileys, and the search word themselves
+	ignored_words = {'RT', '#'}
+
+	# the detected langs are sets of unique elements
+	detected_langs = set()
+
+	# words dictionary
 	words = []
 	search_words = []
-	''' 
-	Generic Twitter Class for sentiment analysis. 
-	'''
-	def __init__(self):
-		consumer_key        = 'C9Zya8TrjZrd9kxFAmcSPT50k'
-		consumer_secret     = 'jhIkCmWOJi1PG3XNRpQIHHpb8AlArmAwNh0BlCH00lXJxEVL1P'
-		access_token        = '715467695093886976-a0cwx3FnD4HV1rwuJMp2YxwoWMuqKCG'
-		access_token_secret = 'ZfPvgFFBpjKbqrO1OIpZtuGEyisTSXlZOsXkIpLnqxndM'
 
-		# attempt authentication 
+	def __init__(self):
+		
+		print(f'\nDownloading/fetching stopwords ..')
+		nltk.download('stopwords')
+		print(f'Crunching data ..\n')
+		consumer_key        = '28DygxxutAjv0sgfdETPaWrDu'
+		consumer_secret     = '2d5Fn5ez4rXDue1S5kEXLrBqwsvTsCszcahLPUkfEV1UiBnodD'
+		access_token        = '715467695093886976-JtC3EeyRYDie0TUvsndL0uya4aavjLI'
+		access_token_secret = 'nxew0AHqnCET1wyXDYYgN9w0SLR4x8yPsqW070kyfsLfj'
+
 		try: 
 			self.auth = OAuthHandler(consumer_key, consumer_secret) 
 			self.auth.set_access_token(access_token, access_token_secret) 
-			self.api = tweepy.API(self.auth) 
+			self.api = tweepy.API(self.auth)  
+			# print(self.api.auth._get_request_token.value)
+
 		except: 
 			print("Error: Authentication Failed") 
 
+		
 
-	''' 
-	Utility function to clean tweet text by removing links, special characters 
-	using simple regex statements. 
-	'''
-	def clean_tweet(self, tweet):
-		return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t]) |(\w+:\/\/\S+)", " ", tweet).split()) 
 
-	def get_tweet_sentiment(self, tweet): 
-		# create TextBlob object of passed tweet text 
-		clean_tweet = self.clean_tweet(tweet)
-		analysis = TextBlob(clean_tweet) 
 
-		# add words to words list dictionnary
-		self.words += clean_tweet.split()
+	
+
+	def sanitize_text(self, text):
+		
+		# remove non-words
+		sanitized_text = ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t]) |(\w+:\/\/\S+)", " ", text).split()) 
+
+		# self.detected_langs.add(TextBlob(sanitized_text).detect_language())
+
+		# TODO stop words language can be set based on the detected language of the tweet.
+		stop_words = set(stopwords.words('english'))
+
+		stop_words.update(self.ignored_words)
+		
+		word_tokens = word_tokenize(sanitized_text) 
+  
+		filtered_sentence = [w for w in word_tokens if not w in stop_words] 
+  
+		#filtered_sentence = [] 
+
+		# not ignored and > 1 (punctation and stuff)
+		for w in word_tokens: 
+		    if w not in stop_words and len(w) > 1: 
+		        filtered_sentence.append(w) 
+		#print (filtered_sentence)
+
+		# add words without stopwords to list
+		self.words += filtered_sentence
+
+		# I am going to need the whole text for a better classification
+		return sanitized_text
+
+
+	def train(self):
+		super(NaiveBayesAnalyzer, self).train()
+		self._classifier = nltk.classify.NaiveBayesClassifier.train(train_data)
+		
+
+	# Classify by polarity and subjectivity using TextBlob
+	def get_sentiment(self, text):
+		# Keep idomatic text
+		text = self.sanitize_text(text)
+		analysis = TextBlob(text) 
+		
+		# add to the langs used if not already existing
+		#self.detected_langs.add(analysis.detect_language())
 
 		# set sentiment 
 		if analysis.sentiment.polarity > 0: 
@@ -50,70 +104,73 @@ class TwitterAnalyzer(object):
 		else: 
 			return 'negative'
 
-	def get_tweets(self, query, count = 100): 
-		''' 
-		Main function to fetch tweets and parse them. 
-		'''
+
+
+	def fetch_tweets(self, query, count = 500): 
 		# empty list to store parsed tweets 
 		tweets = [] 
 
+		# the words included in the query should be ignored from most frequently used words
+		self.ignored_words.update(query.split())
+		#print (self.ignored_words)
+	
 		try: 
-			# call twitter api to fetch tweets 
-			fetched_tweets = self.api.search(q = query, count = count) 
-			# parsing tweets one by one 
+			# fetch tweets 
+			fetched_tweets = self.api.search(q = query, count=count) 
+			# extract tweet body and guess sentiment 
 			for tweet in fetched_tweets: 
-				# empty dictionary to store required params of a tweet 
+				# empty dictionary for tweet, sentiment 
 				parsed_tweet = {} 
+				parsed_tweet['text'] = tweet.text.lower()
+				parsed_tweet['sentiment'] = self.get_sentiment(tweet.text) 
 
-				# saving text of tweet 
-				parsed_tweet['text'] = tweet.text 
-				# saving sentiment of tweet 
-				parsed_tweet['sentiment'] = self.get_tweet_sentiment(tweet.text) 
-
-				# appending parsed tweet to tweets list 
+				# Exclude retweets
 				if tweet.retweet_count > 0: 
-					# if tweet has retweets, ensure that it is appended only once 
 					if parsed_tweet not in tweets: 
 						tweets.append(parsed_tweet) 
 				else: 
 					tweets.append(parsed_tweet) 
 
-			# return parsed tweets 
+			# Parsed tweets 
 			return tweets 
 
 		except tweepy.TweepError as e: 
-			# print error (if any) 
 			print("Error : " + str(e)) 
+
 
 def main(): 
 	# creating object of TwitterClient Class 
 	api = TwitterAnalyzer() 
 	# calling function to get tweets 
-	tweets = api.get_tweets(query = sys.argv[1], count = 200)
+	tweets = api.fetch_tweets(query = sys.argv[1], count = sys.argv[2])
 
+	# most occuring real words
 	terms_occurence = Counter(api.words)
-	print(terms_occurence.most_common(5))
+	print(f'\nMost frequently used words')
+	print(terms_occurence.most_common(10))
+
+	print(terms_occurence)
+
+	# print(f'\nMost langs')
+	# print(api.detected_langs)
 
 	# picking positive tweets from tweets 
 	ptweets = [tweet for tweet in tweets if tweet['sentiment'] == 'positive'] 
-	# percentage of positive tweets 
-	print("Positive tweets percentage: {} %".format(100*len(ptweets)/len(tweets))) 
-	# picking negative tweets from tweets 
-	ntweets = [tweet for tweet in tweets if tweet['sentiment'] == 'negative'] 
-	# percentage of negative tweets 
-	print("Negative tweets percentage: {} %".format(100*len(ntweets)/len(tweets))) 
-	# percentage of neutral tweets 
-	print("Neutral tweets percentage: {} % ".format(100* (len(tweets) - len(ntweets) - len(ptweets))/len(tweets))) 
+	ntweets = [tweet for tweet in tweets if tweet['sentiment'] == 'negative']  
 
-	# printing first 5 positive tweets 
-	# print("\n\nPositive tweets:") 
-	# for tweet in ptweets[:10]: 
-	# 	print(tweet['text']) 
+	positive_tweet_percentage = 100 * len(ptweets)/len(tweets)
+	negative_tweet_percentage = 100 * len(ntweets)/len(tweets)
+	natural_tweet_percentage  = 100 * ( len(tweets) - len(ntweets) - len(ptweets) ) / len(tweets)
 
-	# # printing first 5 negative tweets 
-	# print("\n\nNegative tweets:") 
-	# for tweet in ntweets[:10]: 
-	# 	print(tweet['text']) 
+	table = [["Positive",len(ptweets),positive_tweet_percentage],
+	["Negative",len(ntweets),negative_tweet_percentage],
+	["Neutral",( len(tweets) - len(ntweets) - len(ptweets)),natural_tweet_percentage],
+	["Total", len(tweets), 100 * len(tweets)/len(tweets) ]]
+
+	# print a grid-formatted table with stats.
+	print (f'\nProcessed tweets stats (non english and REs ignored).\n')
+	print(tabulate(table, headers=["Polarity","Number", "Percentage"],tablefmt="grid"))
+
 
 
 #one argument should be passed of type string, read on function on main
