@@ -57,10 +57,12 @@ class TwitterAnalyzer(object):
 	
 
 	def sanitize_text(self, text):
-		
-		if detect(text) == 'en':
-			allow_in_dict = True
-		else:
+		try:
+			if detect(text) == 'en':
+				allow_in_dict = True
+			else:
+				allow_in_dict = False
+		except:
 			allow_in_dict = False
 
 		# remove non-words
@@ -115,15 +117,21 @@ class TwitterAnalyzer(object):
 
 
 	def guess_the_news(self, words):
-		temp = []
+		temp = set()
 		for word in words:
-			temp +=word[0]
-		 
+			temp.add(word[0])
+		# print(temp)
 		blob_from_most_used = TextBlob(' '.join(temp))
-		blob_from_most_used.ngrams(n=5)
-		print (blob_from_most_used)
+		
+		guesses = blob_from_most_used.ngrams(n=10)
 
-
+		print (f'\nThese are a few guesses on what people are saying:\n')
+		for guess in guesses:
+			try:
+				if detect(' '.join(guess)) == 'en':
+					print (' '.join(guess))
+			except :
+					pass
 
 
 	def fetch_tweets(self, query, count = 500): 
@@ -169,10 +177,6 @@ def main():
 	print(f'\nMost frequently used words')
 	print(terms_occurence.most_common(10))
 
-	#print(terms_occurence)
-
-	# print(f'\nMost langs')
-	# print(api.detected_langs)
 
 	# picking positive tweets from tweets 
 	ptweets = [tweet for tweet in tweets if tweet['sentiment'] == 'positive'] 
@@ -196,11 +200,6 @@ def main():
 
 	api.guess_the_news(terms_occurence.most_common(10))
 
-	# Generate a word cloud image
-	# wordcloud = WordCloud(stopwords=api.ignored_words).generate(dictionary_str)
-
-	# plt.imshow(wordcloud, interpolation='bilinear')
-	# plt.axis("off")
 
 	# lower max_font_size
 	wordcloud = WordCloud(stopwords=api.stop_words, max_font_size=40).generate(dictionary_str)
@@ -208,12 +207,6 @@ def main():
 	plt.imshow(wordcloud, interpolation="bilinear")
 	plt.axis("off")
 	plt.show()
-
-
-	
-
-	# wc = WordCloud(background_color="white", max_words=2000, mask=alice_mask,
-    #            stopwords=stopwords, contour_width=3, contour_color='steelblue')
 
 
 
