@@ -114,6 +114,17 @@ class TwitterAnalyzer(object):
 			return 'negative'
 
 
+	def guess_the_news(self, words):
+		temp = []
+		for word in words:
+			temp +=word[0]
+		 
+		blob_from_most_used = TextBlob(' '.join(temp))
+		blob_from_most_used.ngrams(n=5)
+		print (blob_from_most_used)
+
+
+
 
 	def fetch_tweets(self, query, count = 500): 
 		# empty list to store parsed tweets 
@@ -182,6 +193,9 @@ def main():
 
 	
 	dictionary_str = ' '.join(api.words)
+
+	api.guess_the_news(terms_occurence.most_common(10))
+
 	# Generate a word cloud image
 	# wordcloud = WordCloud(stopwords=api.ignored_words).generate(dictionary_str)
 
@@ -195,6 +209,9 @@ def main():
 	plt.axis("off")
 	plt.show()
 
+
+	
+
 	# wc = WordCloud(background_color="white", max_words=2000, mask=alice_mask,
     #            stopwords=stopwords, contour_width=3, contour_color='steelblue')
 
@@ -205,8 +222,3 @@ def main():
 if __name__ == "__main__": 
 	# calling main function 
 	main() 
-
-
-
-    # wiki = TextBlob("Python is a high-level, language general-purpose programming language.")
-    # print (type(wiki.words))
