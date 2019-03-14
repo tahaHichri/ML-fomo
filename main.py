@@ -6,11 +6,15 @@ import tweepy
 import numpy as np
 from tabulate import tabulate
 from textblob import TextBlob
+
 from tweepy import OAuthHandler 
 from collections import Counter
 from nltk.corpus import stopwords 
 from nltk.tokenize import word_tokenize 
 from textblob.decorators import requires_nltk_corpus
+
+import matplotlib.pyplot as plt
+from wordcloud import WordCloud, STOPWORDS
 
 class TwitterAnalyzer(object): 
 	_classifier = None
@@ -61,17 +65,17 @@ class TwitterAnalyzer(object):
 		# TODO stop words language can be set based on the detected language of the tweet.
 		stop_words = set(stopwords.words('english'))
 
+		stop_words.update(STOPWORDS)
 		stop_words.update(self.ignored_words)
 		
 		word_tokens = word_tokenize(sanitized_text) 
   
-		filtered_sentence = [w for w in word_tokens if not w in stop_words] 
+		#filtered_sentence = [w for w in word_tokens if not w in stop_words and len(w) > 1] 
   
-		#filtered_sentence = [] 
-
+		filtered_sentence = [] 
 		# not ignored and > 1 (punctation and stuff)
 		for w in word_tokens: 
-		    if w not in stop_words and len(w) > 1: 
+		    if w not in stop_words and len(w) > 1 : 
 		        filtered_sentence.append(w) 
 		#print (filtered_sentence)
 
@@ -171,12 +175,32 @@ def main():
 	print (f'\nProcessed tweets stats (non english and REs ignored).\n')
 	print(tabulate(table, headers=["Polarity","Number", "Percentage"],tablefmt="grid"))
 
+	
+	dictionary_str = ' '.join(api.words)
+	# Generate a word cloud image
+	# wordcloud = WordCloud(stopwords=api.ignored_words).generate(dictionary_str)
+
+	# plt.imshow(wordcloud, interpolation='bilinear')
+	# plt.axis("off")
+
+	# lower max_font_size
+	wordcloud = WordCloud(stopwords=api.ignored_words, max_font_size=40).generate(dictionary_str)
+	plt.figure()
+	plt.imshow(wordcloud, interpolation="bilinear")
+	plt.axis("off")
+	plt.show()
+
+	# wc = WordCloud(background_color="white", max_words=2000, mask=alice_mask,
+    #            stopwords=stopwords, contour_width=3, contour_color='steelblue')
+
+
 
 
 #one argument should be passed of type string, read on function on main
 if __name__ == "__main__": 
 	# calling main function 
 	main() 
+
 
 
     # wiki = TextBlob("Python is a high-level, language general-purpose programming language.")
