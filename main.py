@@ -22,6 +22,10 @@ from tweepy import OAuthHandler
 from collections import Counter
 from nltk.corpus import stopwords 
 from nltk.tokenize import word_tokenize 
+from nltk.parse.generate import generate, demo_grammar
+from nltk.parse import ShiftReduceParser
+from nltk import CFG
+import language_check
 from textblob.decorators import requires_nltk_corpus
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud, STOPWORDS
@@ -29,9 +33,11 @@ from wordcloud import WordCloud, STOPWORDS
 class TwitterAnalyzer(object): 
 	_classifier = None
 
+	_checkLang = ''
+
 	# The ignored words are twitter hashtags, links, smileys, and the search word themselves
 	# This set is not final, stopwords from the wordCloud , NLTK are included also
-	ignored_words = {'RT', '#'}
+	ignored_words = {'RT', '#', 'https', '_twt'}
 
 	# the detected langs are sets of unique elements
 	detected_langs = set()
@@ -43,14 +49,19 @@ class TwitterAnalyzer(object):
 	stop_words = []
 
 	def __init__(self):
-		
+		self._checkLang =  language_check.LanguageTool('en-US')
+
 		print(f'\nDownloading/fetching stopwords ..')
 		nltk.download('stopwords')
 		print(f'Crunching data ..\n')
-		consumer_key        = '28DygxxutAjv0sgfdETPaWrDu'
-		consumer_secret     = '2d5Fn5ez4rXDue1S5kEXLrBqwsvTsCszcahLPUkfEV1UiBnodD'
-		access_token        = '715467695093886976-JtC3EeyRYDie0TUvsndL0uya4aavjLI'
-		access_token_secret = 'nxew0AHqnCET1wyXDYYgN9w0SLR4x8yPsqW070kyfsLfj'
+
+		# TODO insert your Twitter API keys here
+		# Create a developer account and request access
+		# @link{ https://developer.twitter.com/en/apply-for-access.html} 
+		consumer_key        = '<consumer_key>'
+		consumer_secret     = '<consumer_secret>'
+		access_token        = '<access_token>'
+		access_token_secret = '<access_token_secret>'
 
 		try: 
 			self.auth = OAuthHandler(consumer_key, consumer_secret) 
@@ -75,12 +86,7 @@ class TwitterAnalyzer(object):
 		# remove non-words
 		sanitized_text = ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t]) |(\w+:\/\/\S+)", " ", text).split()) 
 
-
-		# self.detected_langs.add(TextBlob(sanitized_text).detect_language())
-
-		# TODO stop words language can be set based on the detected language of the tweet.
 		self.stop_words = set(stopwords.words('english'))
-
 		self.stop_words.update(STOPWORDS)
 		self.stop_words.update(self.ignored_words)
 		
@@ -127,18 +133,14 @@ class TwitterAnalyzer(object):
 		temp = set()
 		for word in words:
 			temp.add(word[0])
-		# print(temp)
-		blob_from_most_used = TextBlob(' '.join(temp))
+	
+		matches = self._checkLang.check(' '.join(temp))
 		
-		guesses = blob_from_most_used.ngrams(n=6)
+		print (f'\nHere is an auto-generated guess of what people are saying:\n')
 
-		print (f'\nHere are a few guesses on what people are saying:\n')
-		for guess in guesses:
-			try:
-				if detect(' '.join(guess)) == 'en':
-					print (' '.join(guess))
-			except :
-					continue
+		print (language_check.correct(' '.join(temp), matches))
+		
+
 
 
 	def fetch_tweets(self, query, count = 500): 
@@ -177,12 +179,12 @@ def main():
 	# creating object of TwitterClient Class 
 	api = TwitterAnalyzer() 
 	# calling function to get tweets 
-	tweets = api.fetch_tweets(query = sys.argv[1], count = sys.argv[2])
+	tweets = api.fetch_tweets(query = sys.argv[1], count = sys.argv[2] if len(sys.argv) < 2 else 500)
 
 	# most occuring real words
 	terms_occurence = Counter(api.words)
 	print(f'\nMost frequently used words')
-	print(terms_occurence.most_common(10))
+	print(terms_occurence.most_common(5))
 
 
 	# picking positive tweets from tweets 
@@ -205,10 +207,10 @@ def main():
 	
 	dictionary_str = ' '.join(api.words)
 
-	api.guess_the_news(terms_occurence.most_common(10))
+	api.guess_the_news(terms_occurence.most_common(15))
 
 
-	# lower max_font_size
+	# Config and show cloud of most used words
 	wordcloud = WordCloud(stopwords=api.stop_words, max_font_size=40).generate(dictionary_str)
 	plt.figure()
 	plt.imshow(wordcloud, interpolation="bilinear")

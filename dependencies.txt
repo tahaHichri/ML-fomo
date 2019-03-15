@@ -6,3 +6,4 @@ tweepy
 nltk
 matplotlib
 wordcloud
+language-check
