@@ -1,4 +1,15 @@
-# I have deliberatly chosen this order :p
+'''
+ML-Fomo ~ Written by Taha HICHRI <hishri.taha@gmail.com>, March 2019
+
+This software is GPL licensed. The work based off of it must be released as open source.
+
+This program is free software: you can redistribute it and/or modify it under the terms of the 
+GNU General Public License as published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version.
+
+This file is subject to the terms and conditions defined in
+file 'LICENSE.txt', which is part of this source code package.
+'''
 import re 
 import sys
 import nltk
@@ -6,23 +17,20 @@ import tweepy
 import numpy as np
 from tabulate import tabulate
 from textblob import TextBlob
-
 from langdetect import detect
-
 from tweepy import OAuthHandler 
 from collections import Counter
 from nltk.corpus import stopwords 
 from nltk.tokenize import word_tokenize 
 from textblob.decorators import requires_nltk_corpus
-
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud, STOPWORDS
 
 class TwitterAnalyzer(object): 
 	_classifier = None
 
-	
 	# The ignored words are twitter hashtags, links, smileys, and the search word themselves
+	# This set is not final, stopwords from the wordCloud , NLTK are included also
 	ignored_words = {'RT', '#'}
 
 	# the detected langs are sets of unique elements
@@ -55,7 +63,6 @@ class TwitterAnalyzer(object):
 
 		
 	
-
 	def sanitize_text(self, text):
 		try:
 			if detect(text) == 'en':
@@ -123,15 +130,15 @@ class TwitterAnalyzer(object):
 		# print(temp)
 		blob_from_most_used = TextBlob(' '.join(temp))
 		
-		guesses = blob_from_most_used.ngrams(n=10)
+		guesses = blob_from_most_used.ngrams(n=6)
 
-		print (f'\nThese are a few guesses on what people are saying:\n')
+		print (f'\nHere are a few guesses on what people are saying:\n')
 		for guess in guesses:
 			try:
 				if detect(' '.join(guess)) == 'en':
 					print (' '.join(guess))
 			except :
-					pass
+					continue
 
 
 	def fetch_tweets(self, query, count = 500): 
