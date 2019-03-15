@@ -26,24 +26,29 @@ Make sure your environment meets the rerequisites.<br />
 ``git@github.com:tahaHichri/ML-fomo.git``
 * Go ahead and run the install script and wait for all the dependencies to be downloaded.<br />
 ``python install/install.py``
-Let's fetch the models ``python -m textblob.download_corpora lite`` <br />
+* Let's fetch the models<br />
+``python -m textblob.download_corpora lite`` <br />
 
 ## GET STARTED
 Once you get everything nice and ready, the only thing that remains is to set your <a href ="https://developer.twitter.com/en/apply-for-access.html">twitter dev keys</a>.<br/>
 That will allow your app to communicate with the Twitter API.
 
 There are 4 placeholders on line 62, 63, 64, and 65 in <i>main.py</i> file.
-``
+
+```python
+# TODO insert your Twitter API keys here
+# Create a developer account and request access
+# @link{ https://developer.twitter.com/en/apply-for-access.html} 
 consumer_key        = '<consumer_key>'
 consumer_secret     = '<consumer_secret>'
 access_token        = '<access_token>'
 access_token_secret = '<access_token_secret>'
-``
+```
 
 ## USAGE
-Easy ..
-`python main.py <term> <limit>`
-e.g.
+
+Command pattern: `python main.py <term> <limit>`
+<br /> Example call: 
 `python main.py 'Metallica' 100`
 
 
