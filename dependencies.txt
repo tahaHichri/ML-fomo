@@ -1,9 +1,0 @@
-numpy
-tabulate
-textblob
-langdetect
-tweepy
-nltk
-matplotlib
-wordcloud
-language-check
