@@ -1,4 +1,5 @@
 # ML-fomo
+There is an in-depth look at the terms and structure of this project <a href="https://medium.com/@hitaha/how-to-fight-social-media-anxiety-with-machine-learning-e10b9ec630e4">on Medium</a>.
 
 ## PRELUDE
 If you have the compulsive urge to check social media apps throughout the day and miss most of what happens outside your device screen in process, you might suffer from what science call "<a href="https://www.psychologytoday.com/us/blog/ritual-and-the-brain/201804/the-science-fomo-and-what-we-re-really-missing-out">Fear-of-missing-out</a>"
