@@ -20,6 +20,7 @@ In this project, we classify people's tweets by estimating their opinions/polari
 <i>Python 3.7.1 and pip 19.0.3 were used in the development of this project, any Python 3.x version should work just fine.</i>
 * Python
 * Python pip: `sudo apt-get install python-pip` (Linux Debian family)
+* Java 6.0 or newer (required for Language_check lib)
 
 ## INSTALLATION
 Make sure your environment meets the rerequisites.<br />
