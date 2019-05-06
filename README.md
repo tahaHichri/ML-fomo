@@ -22,6 +22,8 @@ In this project, we classify people's tweets by estimating their opinions/polari
 * Python pip: `sudo apt-get install python-pip` (Linux Debian family)
 * Java 6.0 or newer (required for Language_check lib)
 
+_You can run ML-Fomo directly on AWS SageMaker using this [Jupyter Notebook](https://github.com/tahaHichri/ML-Social-Network-Analysis-AWS-SageMaker)_
+
 ## INSTALLATION
 Make sure your environment meets the rerequisites.<br />
 * clone/download this repo to your workspace <br />
